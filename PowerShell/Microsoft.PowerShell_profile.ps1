@@ -79,3 +79,42 @@ Set-Alias vim nvim
 function dc(){
     docker compose $args
 }
+
+function sudo {
+    param (
+        [Parameter(Mandatory=$true, ValueFromRemainingArguments=$true)]
+        [String[]]$Command
+    )
+    if ($Command.Length -eq 1) {
+        Start-Process -FilePath $Command[0] -Verb RunAs -Wait
+    } else {
+        $argsList = $Command[1..($Command.Length - 1)] -join ' '
+        Start-Process -FilePath $Command[0] -ArgumentList $argsList -Verb RunAs -Wait
+    }
+}
+
+$global:Bookmarks = @{
+    "work" = "C:\Git"
+    "profile" = "C:\Git\ConsoleProfiles"
+}
+function g {
+    param([string]$name)
+    if ($global:Bookmarks.ContainsKey($name)) {
+        Set-Location $global:Bookmarks[$name]
+    } else {
+        Write-Host "Bookmark '$name' not found." -ForegroundColor Red
+        Write-Host "Available bookmarks:"
+        $global:Bookmarks.Keys | ForEach-Object { Write-Host "  $_ -> $($global:Bookmarks[$_])" }
+    }
+}
+
+function google {
+    $query = $args -join " "
+    if ($query) {
+        Start-Process "https://www.google.com/search?q=$([uri]::EscapeDataString($query))"
+    }
+}
+
+function git-clean-branches {
+    git branch --merged | Where-Object { $_ -notmatch '^\*|^\s*(main|master|develop)\s*$' } | ForEach-Object { git branch -d $_.Trim() }
+}
